@@ -1,1 +1,64 @@
+# -------------------------
+# Environment variables
+# -------------------------
 .env
+.env.local
+.env.development
+.env.production
+
+# -------------------------
+# Python
+# -------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Python virtual environment
+venv/
+.venv/
+
+# -------------------------
+# Node / React
+# -------------------------
+node_modules/
+dist/
+build/
+coverage/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -------------------------
+# Uploads and local data
+# -------------------------
+uploads/
+vector_store/
+
+# -------------------------
+# Firebase secrets
+# -------------------------
+firebase-admin.json
+firebase-service-account.json
+
+# -------------------------
+# OS files
+# -------------------------
+.DS_Store
+Thumbs.db
+
+# -------------------------
+# IDE files
+# -------------------------
+.vscode/
+.idea/
+
+# -------------------------
+# Temporary files
+# -------------------------
+*.log
+*.tmp
+*.cache

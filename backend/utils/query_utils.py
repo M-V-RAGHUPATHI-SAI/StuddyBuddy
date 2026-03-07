@@ -3,12 +3,12 @@ import pickle
 import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer
-from openai import OpenAI
+from groq import Groq
 from dotenv import load_dotenv
 
-# Load OpenAI API key
+# Load Groq API key
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Load embedding model
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -29,28 +29,42 @@ def query_vector_db(query, store_dir="vector_store", top_k=3):
     return top_pages
 
 
-def summarize_with_llm(query, passages):
+def summarize_with_llm(query, passages, is_quiz=False):
     """
-    Uses GPT to generate an answer using top-matched passages.
+    Uses Groq to generate an answer using top-matched passages.
     """
-    context = "\n\n".join([f"Page {p['page']}:\n{p['text']}" for p in passages])
+    limited_passages = passages[:3]
+    context_chunks = []
+    for p in limited_passages:
+        text = p['text']
+        if len(text) > 500:
+            text = text[:500] + "..."
+        context_chunks.append(f"Page {p['page']}:\n{text}")
 
-    prompt = f"""You are a helpful study assistant.
-Use the context below to answer the question briefly and accurately.
-Include the page numbers in your answer.
+    context = "\n\n".join(context_chunks)
+
+    if is_quiz:
+        prompt = f"""Using the following context from a document, generate 5 multiple choice quiz questions with 4 options each. Provide the correct answer at the end.
+
+Context:
+{context}"""
+    else:
+        prompt = f"""Answer the question using only the context below.
 
 Context:
 {context}
 
-Question: {query}
-"""
+Question:
+{query}
+
+Answer:"""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a smart, concise study assistant."},
-            {"role": "user", "content": prompt}
-        ]
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}],
+        stream=True
     )
 
-    return response.choices[0].message.content
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            yield chunk.choices[0].delta.content
