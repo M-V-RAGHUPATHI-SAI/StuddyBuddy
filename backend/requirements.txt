@@ -1,0 +1,10 @@
+flask
+flask-cors
+python-dotenv
+firebase-admin
+PyMuPDF
+faiss-cpu
+sentence-transformers
+groq
+numpy
+gunicorn

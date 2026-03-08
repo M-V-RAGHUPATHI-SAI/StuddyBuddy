@@ -7,13 +7,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import json
+
 # Initialize Firebase Admin
-cred_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY")
-if cred_path and os.path.exists(cred_path):
-    cred = credentials.Certificate(cred_path)
+firebase_json = os.getenv("FIREBASE_JSON")
+if firebase_json:
+    cred_dict = json.loads(firebase_json)
+    cred = credentials.Certificate(cred_dict)
     firebase_admin.initialize_app(cred)
 else:
-    print(f"WARNING: Cannot find Firebase service account key at '{cred_path}'. Authentication will fail.")
+    cred_path = 'serviceAccount.json'
+    if os.path.exists(cred_path):
+        cred = credentials.Certificate(cred_path)
+        firebase_admin.initialize_app(cred)
+    else:
+        print("WARNING: Cannot find Firebase configuration. Authentication will fail.")
 
 def verify_token(f):
     @wraps(f)
