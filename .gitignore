@@ -37,12 +37,13 @@ yarn-error.log*
 # -------------------------
 uploads/
 vector_store/
+*.pdf
 
 # -------------------------
 # Firebase secrets
 # -------------------------
 firebase-admin.json
-firebase-service-account.json
+serviceAccount.json
 
 # -------------------------
 # OS files
@@ -62,4 +63,3 @@ Thumbs.db
 *.log
 *.tmp
 *.cache
-serviceAccount.json
