@@ -230,21 +230,20 @@ export const ChatInterface = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              onMessagesChange([]);
               setInput("");
-              setShowUpload(true);
+              setShowUpload(!showUpload);
             }}
             className="gap-2"
           >
             <Upload className="w-4 h-4" />
-            Change Document
+            {showUpload ? "Cancel" : "Change Document"}
           </Button>
         )}
       </div>
 
       {/* ---------- CHAT AREA ---------- */}
       <ScrollArea className="flex-1 p-6">
-        {messages.map((message, index) => (
+        {!showUpload && messages.map((message, index) => (
           <div
             key={index}
             className={`flex ${message.role === "user" ? "justify-end mt-6" : "justify-start mt-6"
@@ -301,7 +300,7 @@ export const ChatInterface = ({
           </div>
         )}
 
-        {isLoading && (
+        {!showUpload && isLoading && (
           <div className="flex justify-start mt-6 animate-in slide-in-from-bottom-2 fade-in duration-300">
             <div className="bg-card border border-border rounded-2xl p-5 shadow-soft">
               <div className="flex items-center gap-3">
@@ -333,11 +332,11 @@ export const ChatInterface = ({
                 : "Upload a document first..."
             }
             className="flex-1 h-12 rounded-xl border-2"
-            disabled={isLoading || !fileName}
+            disabled={isLoading || !fileName || showUpload}
           />
           <Button
             onClick={handleSend}
-            disabled={isLoading || !input.trim() || !fileName}
+            disabled={isLoading || !input.trim() || !fileName || showUpload}
             size="lg"
             className="bg-gradient-primary hover:shadow-glow px-6"
           >
