@@ -91,10 +91,13 @@ const App = () => {
     else createNewChat();
   };
 
-  const updateChatMessages = (id: string, messages: any[]) => {
+  const updateChatMessages = (id: string, messages: any[] | ((prev: any[]) => any[])) => {
     setChats((prev) =>
       prev.map((chat) =>
-        chat.id === id ? { ...chat, messages: [...messages] } : chat
+        chat.id === id ? {
+          ...chat,
+          messages: typeof messages === "function" ? messages(chat.messages) : messages
+        } : chat
       )
     );
   };
@@ -164,7 +167,9 @@ const App = () => {
                       : "hover:bg-gray-100"
                       }`}
                   >
-                    <span className="truncate flex-1">{chat.title}</span>
+                    <span className="truncate flex-1">
+                      {chat.fileName ? chat.fileName.replace(".pdf", "") : chat.title}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"

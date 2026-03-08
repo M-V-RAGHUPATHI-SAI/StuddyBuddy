@@ -16,7 +16,7 @@ interface ChatInterfaceProps {
   fileName: string | null;
   onFileUploaded: (file: File) => void;
   messages: Message[];
-  onMessagesChange: (messages: Message[]) => void;
+  onMessagesChange: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
   onCitationClick: (page: number) => void;
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
@@ -71,7 +71,14 @@ export const ChatInterface = ({
     if (!input.trim()) return;
 
     const userMessage: Message = { role: "user", content: input };
-    onMessagesChange([...messages, userMessage]);
+
+    // Initial user message and loading state
+    onMessagesChange(prev => [
+      ...prev,
+      userMessage,
+      { role: "assistant", content: "" }
+    ]);
+
     setInput("");
     setIsLoading(true);
 
@@ -88,9 +95,6 @@ export const ChatInterface = ({
       const decoder = new TextDecoder();
       let done = false;
       let assistantText = "";
-
-      // Add a dummy assistant message that we will actively swap out letters for
-      onMessagesChange([...messages, userMessage, { role: "assistant", content: "" }]);
 
       setIsLoading(false); // Stop the "thinking" animation immediately once the stream starts
 
@@ -119,21 +123,28 @@ export const ChatInterface = ({
           }
 
           // Update the last message progressively
-          onMessagesChange([
-            ...messages,
-            userMessage,
-            { role: "assistant", content: displayContent, sources: sourcesArray.length > 0 ? sourcesArray : undefined }
-          ]);
+          onMessagesChange(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: displayContent,
+              sources: sourcesArray.length > 0 ? sourcesArray : undefined
+            };
+            return updated;
+          });
         }
       }
     } catch (error) {
       console.error("Error:", error);
       setIsLoading(false); // Clear loading state safely
-      const assistantMessage: Message = {
-        role: "assistant",
-        content: "⚠️ Server error. Check Flask backend.",
-      };
-      onMessagesChange([...messages, userMessage, assistantMessage]);
+      onMessagesChange(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: "⚠️ Server error. Check Flask backend.",
+        };
+        return updated;
+      });
     }
   };
 
@@ -218,7 +229,11 @@ export const ChatInterface = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowUpload(true)}
+            onClick={() => {
+              onMessagesChange([]);
+              setInput("");
+              setShowUpload(true);
+            }}
             className="gap-2"
           >
             <Upload className="w-4 h-4" />
@@ -309,7 +324,9 @@ export const ChatInterface = ({
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSend();
+            }}
             placeholder={
               fileName
                 ? "Ask a question about your document..."

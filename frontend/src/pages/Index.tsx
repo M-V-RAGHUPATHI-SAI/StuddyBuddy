@@ -31,8 +31,9 @@ const Index = ({
 
   const handleCitationClick = (page: number) => {
     if (chat?.fileName) {
-      const pdfUrl = `http://localhost:5000/pdf/${chat.fileName}#page=${page}`;
-      window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+      const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
+      const encoded = encodeURIComponent(chat.fileName);
+      window.open(`${API}/pdf/${encoded}#page=${page}`, "_blank");
     }
   };
 
