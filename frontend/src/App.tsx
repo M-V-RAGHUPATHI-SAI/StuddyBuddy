@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Menu, X } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +21,7 @@ interface Chat {
 const App = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem("chat_history");
@@ -74,6 +75,13 @@ const App = () => {
     };
     setChats((prev) => [newChat, ...prev]);
     setCurrentChatId(newChat.id);
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false); // Auto-close on small screens
+    }
+  };
+
+  const resetSessionForNewDocument = (fileName: string) => {
+    createNewSessionWithFile(fileName);
   };
 
   const deleteChat = (id: string) => {
@@ -105,21 +113,42 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex h-screen bg-gray-50">
+          <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+            {/* Sidebar Overlay for mobile */}
+            {isSidebarOpen && (
+              <div
+                className="fixed inset-0 bg-black/50 z-20 md:hidden transition-opacity"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            )}
+
             {/* Sidebar */}
-            <div className="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+            <div
+              className={`fixed md:relative z-30 w-[280px] shrink-0 h-full bg-white border-r border-gray-200 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:hidden md:w-0 md:border-none"
+                }`}
+            >
               <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold text-lg text-gray-800">History</h2>
                 </div>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-glow text-white rounded-xl p-2.5 transition-all duration-300 h-9 w-9"
-                  onClick={createNewChat}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1 block">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-glow text-white rounded-xl p-2.5 transition-all duration-300 h-9 w-9"
+                    onClick={createNewChat}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 text-gray-500 md:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto">
@@ -152,7 +181,7 @@ const App = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-hidden">
+            <div className={`flex-1 overflow-hidden transition-all duration-300 h-full w-full`}>
               <Routes>
                 <Route
                   path="/"
@@ -164,6 +193,9 @@ const App = () => {
                       }
                       updateChatFileName={(name) => updateChatFileName(currentChatId!, name)}
                       createNewSession={createNewSessionWithFile}
+                      resetSessionForNewDocument={resetSessionForNewDocument}
+                      isSidebarOpen={isSidebarOpen}
+                      setIsSidebarOpen={setIsSidebarOpen}
                     />
                   }
                 />

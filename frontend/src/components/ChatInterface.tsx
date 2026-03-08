@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, BookOpen, Upload, Copy, Check, Volume2, Square } from "lucide-react";
+import { Send, BookOpen, Upload, Copy, Check, Volume2, Square, Menu, ExternalLink } from "lucide-react";
 import { UploadZone } from "@/components/UploadZone";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -18,6 +18,8 @@ interface ChatInterfaceProps {
   messages: Message[];
   onMessagesChange: (messages: Message[]) => void;
   onCitationClick: (page: number) => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const ChatInterface = ({
@@ -26,6 +28,8 @@ export const ChatInterface = ({
   messages,
   onMessagesChange,
   onCitationClick,
+  isSidebarOpen,
+  onToggleSidebar,
 }: ChatInterfaceProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -176,7 +180,19 @@ export const ChatInterface = ({
       {/* ---------- HEADER ---------- */}
       <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center">
+          {onToggleSidebar && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mr-2 gap-2"
+              onClick={onToggleSidebar}
+              title="Toggle History Sidebar"
+            >
+              <Menu className="w-4 h-4 text-gray-700" />
+              <span>History</span>
+            </Button>
+          )}
+          <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center hidden sm:flex">
             <BookOpen className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
@@ -247,12 +263,14 @@ export const ChatInterface = ({
                     {message.sources.map((page, i) => (
                       <Button
                         key={i}
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-7 text-xs bg-muted/50 hover:bg-primary/10 hover:text-primary transition-colors rounded-full px-3"
+                        className="h-8 text-xs bg-blue-50/50 hover:bg-blue-100 hover:text-blue-700 text-blue-600 border-blue-200 transition-all rounded-full px-4 flex items-center gap-1.5 shadow-sm"
                         onClick={() => onCitationClick(page)}
+                        title={`Open Page ${page} in new tab`}
                       >
-                        Page {page}
+                        [Page {page}]
+                        <ExternalLink className="w-3 h-3 opacity-70" />
                       </Button>
                     ))}
                   </div>
