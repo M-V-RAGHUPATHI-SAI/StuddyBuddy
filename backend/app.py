@@ -4,6 +4,7 @@ from utils.pdf_utils import extract_text_per_page
 from utils.embedding_utils import create_vector_store
 from utils.query_utils import query_vector_db, summarize_with_llm
 import os
+from firebase_auth import verify_token
 
 app = Flask(__name__)
 CORS(app)  # allow frontend to connect
@@ -13,25 +14,33 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 @app.route('/upload', methods=['POST'])
+@verify_token
 def upload_pdf():
     if 'pdf' not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
     file = request.files['pdf']
-    path = os.path.join(UPLOAD_FOLDER, file.filename)
+    uid = request.user['uid']
+    user_folder = os.path.join(UPLOAD_FOLDER, uid)
+    os.makedirs(user_folder, exist_ok=True)
+    
+    path = os.path.join(user_folder, file.filename)
     file.save(path)
 
     pages = extract_text_per_page(path)
+    # Note: Global vector store might mix users, but instructions say "Do NOT change the RAG pipeline"
     create_vector_store(pages)
 
     return jsonify({"message": f"Document '{file.filename}' uploaded successfully."})
 
-@app.route('/pdf/<filename>', methods=['GET'])
-def get_pdf(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+@app.route('/pdf/<uid>/<filename>', methods=['GET'])
+def get_pdf(uid, filename):
+    user_folder = os.path.join(UPLOAD_FOLDER, uid)
+    return send_from_directory(user_folder, filename)
 
 
 @app.route('/ask', methods=['POST'])
+@verify_token
 def ask_question():
     try:
         data = request.get_json()

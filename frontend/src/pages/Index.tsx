@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { ChatInterface } from "@/components/ChatInterface";
+import { useAuth } from "../context/AuthContext";
 
 interface IndexProps {
   chat: any;
@@ -20,6 +21,7 @@ const Index = ({
   isSidebarOpen,
   setIsSidebarOpen
 }: IndexProps) => {
+  const { user } = useAuth();
 
   const handleFileUploaded = (file: File) => {
     if (chat?.fileName) {
@@ -30,10 +32,10 @@ const Index = ({
   };
 
   const handleCitationClick = (page: number) => {
-    if (chat?.fileName) {
+    if (chat?.fileName && user) {
       const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
       const encoded = encodeURIComponent(chat.fileName);
-      window.open(`${API}/pdf/${encoded}#page=${page}`, "_blank");
+      window.open(`${API}/pdf/${user.uid}/${encoded}#page=${page}`, "_blank");
     }
   };
 

@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, BookOpen, Upload, Copy, Check, Volume2, Square, Menu, ExternalLink } from "lucide-react";
+import { Send, BookOpen, Upload, Copy, Check, Volume2, Square, Menu, ExternalLink, LogOut } from "lucide-react";
 import { UploadZone } from "@/components/UploadZone";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "../context/AuthContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -38,6 +39,7 @@ export const ChatInterface = ({
   const [speakingIndex, setSpeakingIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { user, logout } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -83,9 +85,13 @@ export const ChatInterface = ({
     setIsLoading(true);
 
     try {
+      const token = await user?.getIdToken();
       const response = await fetch("http://127.0.0.1:5000/ask", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ query: input }),
       });
 
@@ -157,8 +163,12 @@ export const ChatInterface = ({
     formData.append("pdf", file);
 
     try {
+      const token = await user?.getIdToken();
       const response = await fetch("http://127.0.0.1:5000/upload", {
         method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -225,20 +235,26 @@ export const ChatInterface = ({
           </div>
         </div>
 
-        {fileName && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setInput("");
-              setShowUpload(!showUpload);
-            }}
-            className="gap-2"
-          >
-            <Upload className="w-4 h-4" />
-            {showUpload ? "Cancel" : "Change Document"}
+        <div className="flex items-center gap-2">
+          {fileName && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setInput("");
+                setShowUpload(!showUpload);
+              }}
+              className="gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              {showUpload ? "Cancel" : "Change Document"}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={logout} className="gap-2 text-muted-foreground hover:text-red-600 transition-colors">
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Logout</span>
           </Button>
-        )}
+        </div>
       </div>
 
       {/* ---------- CHAT AREA ---------- */}

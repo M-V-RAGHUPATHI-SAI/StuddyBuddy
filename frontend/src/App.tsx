@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Menu, X } from "lucide-react";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Login } from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -18,7 +20,8 @@ interface Chat {
   fileName?: string;
 }
 
-const App = () => {
+const MainApp = () => {
+  const { user, loading } = useAuth();
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -110,105 +113,116 @@ const App = () => {
 
   const currentChat = chats.find((chat) => chat.id === currentChatId);
 
+  if (loading) return <div className="h-screen flex items-center justify-center">Loading StudyBuddy...</div>;
+  if (!user) return <Login />;
+
+  return (
+    <BrowserRouter>
+      <div className="flex h-screen bg-gray-50 overflow-hidden relative">
+        {/* Sidebar Overlay for mobile */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-20 md:hidden transition-opacity"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div
+          className={`fixed md:relative z-30 w-[280px] shrink-0 h-full bg-white border-r border-gray-200 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:hidden md:w-0 md:border-none"
+            }`}
+        >
+          <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-lg text-gray-800">History</h2>
+            </div>
+            <div className="flex items-center gap-1 block">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-glow text-white rounded-xl p-2.5 transition-all duration-300 h-9 w-9"
+                onClick={createNewChat}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 text-gray-500 md:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {chats.length === 0 && (
+              <p className="text-center text-gray-400 mt-4">No chats yet</p>
+            )}
+            {chats.map((chat) => (
+              <div
+                key={chat.id}
+                onClick={() => setCurrentChatId(chat.id)}
+                className={`flex items-center justify-between px-3 py-2 cursor-pointer rounded-md transition-all duration-150 ${currentChatId === chat.id
+                  ? "bg-blue-100 text-blue-700 font-semibold"
+                  : "hover:bg-gray-100"
+                  }`}
+              >
+                <span className="truncate flex-1">
+                  {chat.fileName ? chat.fileName.replace(".pdf", "") : chat.title}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteChat(chat.id);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat Area */}
+        <div className={`flex-1 overflow-hidden transition-all duration-300 h-full w-full`}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Index
+                  chat={currentChat}
+                  updateChatMessages={(msgs) =>
+                    updateChatMessages(currentChatId!, msgs)
+                  }
+                  updateChatFileName={(name) => updateChatFileName(currentChatId!, name)}
+                  createNewSession={createNewSessionWithFile}
+                  resetSessionForNewDocument={resetSessionForNewDocument}
+                  isSidebarOpen={isSidebarOpen}
+                  setIsSidebarOpen={setIsSidebarOpen}
+                />
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+      </div>
+    </BrowserRouter>
+  );
+};
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <div className="flex h-screen bg-gray-50 overflow-hidden relative">
-            {/* Sidebar Overlay for mobile */}
-            {isSidebarOpen && (
-              <div
-                className="fixed inset-0 bg-black/50 z-20 md:hidden transition-opacity"
-                onClick={() => setIsSidebarOpen(false)}
-              />
-            )}
-
-            {/* Sidebar */}
-            <div
-              className={`fixed md:relative z-30 w-[280px] shrink-0 h-full bg-white border-r border-gray-200 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${isSidebarOpen ? "translate-x-0" : "-translate-x-full md:hidden md:w-0 md:border-none"
-                }`}
-            >
-              <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-lg text-gray-800">History</h2>
-                </div>
-                <div className="flex items-center gap-1 block">
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:shadow-glow text-white rounded-xl p-2.5 transition-all duration-300 h-9 w-9"
-                    onClick={createNewChat}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-9 w-9 text-gray-500 md:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-                {chats.length === 0 && (
-                  <p className="text-center text-gray-400 mt-4">No chats yet</p>
-                )}
-                {chats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setCurrentChatId(chat.id)}
-                    className={`flex items-center justify-between px-3 py-2 cursor-pointer rounded-md transition-all duration-150 ${currentChatId === chat.id
-                      ? "bg-blue-100 text-blue-700 font-semibold"
-                      : "hover:bg-gray-100"
-                      }`}
-                  >
-                    <span className="truncate flex-1">
-                      {chat.fileName ? chat.fileName.replace(".pdf", "") : chat.title}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteChat(chat.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Chat Area */}
-            <div className={`flex-1 overflow-hidden transition-all duration-300 h-full w-full`}>
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <Index
-                      chat={currentChat}
-                      updateChatMessages={(msgs) =>
-                        updateChatMessages(currentChatId!, msgs)
-                      }
-                      updateChatFileName={(name) => updateChatFileName(currentChatId!, name)}
-                      createNewSession={createNewSessionWithFile}
-                      resetSessionForNewDocument={resetSessionForNewDocument}
-                      isSidebarOpen={isSidebarOpen}
-                      setIsSidebarOpen={setIsSidebarOpen}
-                    />
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-          </div>
-        </BrowserRouter>
+        <AuthProvider>
+          <MainApp />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
